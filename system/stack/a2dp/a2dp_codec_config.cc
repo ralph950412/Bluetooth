@@ -550,6 +550,9 @@ int A2DP_IotGetPeerSinkCodecType(const uint8_t* p_codec_info) {
         peer_codec_type = IOT_CONF_VAL_A2DP_CODECTYPE_APTXHD;
       } else if (codec_id == A2DP_LDAC_CODEC_ID && vendor_id == A2DP_LDAC_VENDOR_ID) {
         peer_codec_type = IOT_CONF_VAL_A2DP_CODECTYPE_LDAC;
+      } else if (codec_id == A2DP_APTX_ADAPTIVE_CODEC_ID_BLUETOOTH &&
+                 vendor_id == A2DP_APTX_ADAPTIVE_VENDOR_ID) {
+        peer_codec_type = IOT_CONF_VAL_A2DP_CODECTYPE_APTXADAPTIVE;
       }
       break;
     }
