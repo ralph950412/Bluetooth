@@ -60,6 +60,7 @@ using ::bluetooth::audio::aidl::BluetoothAudioCtrlAck;
 using ::bluetooth::audio::aidl::BluetoothAudioSinkClientInterface;
 using ::bluetooth::audio::aidl::codec::A2dpAacToHalConfig;
 using ::bluetooth::audio::aidl::codec::A2dpAptxToHalConfig;
+using ::bluetooth::audio::aidl::codec::A2dpAptxAdaptiveToHalConfig;
 using ::bluetooth::audio::aidl::codec::A2dpCodecToHalBitsPerSample;
 using ::bluetooth::audio::aidl::codec::A2dpCodecToHalChannelMode;
 using ::bluetooth::audio::aidl::codec::A2dpCodecToHalSampleRate;
@@ -282,6 +283,11 @@ bool a2dp_get_selected_hal_codec_config(A2dpCodecConfig* a2dp_config, uint16_t p
       }
       break;
     }
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_ADAPTIVE:
+      if (!A2dpAptxAdaptiveToHalConfig(codec_config, a2dp_config)) {
+        return false;
+      }
+      break;
     case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC: {
       if (!A2dpLdacToHalConfig(codec_config, a2dp_config)) {
         return false;

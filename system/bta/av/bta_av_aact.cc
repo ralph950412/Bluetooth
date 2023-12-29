@@ -3021,10 +3021,12 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
     sub_opcode = param->p_param_buf[1];
     log::verbose("subopcode = {}", sub_opcode);
     switch (sub_opcode) {
+      case HCI_VSQC_CONTROLLER_A2DP_STOP_OPCODE:
       case VS_HCI_A2DP_OFFLOAD_STOP:
       case VS_HCI_A2DP_OFFLOAD_STOP_V2:
         log::verbose("VS_HCI_STOP_A2DP_MEDIA successful");
         break;
+      case HCI_VSQC_CONTROLLER_A2DP_OPCODE:
       case VS_HCI_A2DP_OFFLOAD_START:
       case VS_HCI_A2DP_OFFLOAD_START_V2:
         if (bta_av_cb.offload_start_pending_hndl) {
@@ -3079,6 +3081,17 @@ void bta_av_vendor_offload_start(tBTA_AV_SCB* p_scb, tBT_A2DP_OFFLOAD* offload_s
                                                               param, offload_vendor_callback);
 }
 
+void bta_qti_av_vendor_offload_stop() {
+  uint8_t param[sizeof(tBT_A2DP_OFFLOAD)];
+
+  log::info("");
+  param[0] = HCI_VSQC_CONTROLLER_A2DP_STOP_OPCODE;
+  param[1] = 0;
+
+  BTM_VendorSpecificCommand(HCI_QTI_CONTROLLER_A2DP_OPCODE, 2, param,
+                            offload_vendor_callback);
+}
+
 void bta_av_vendor_offload_start_v2(tBTA_AV_SCB* p_scb, A2dpCodecConfigExt* offload_codec) {
   log::verbose("");
 
@@ -3129,6 +3142,10 @@ void bta_av_vendor_offload_start_v2(tBTA_AV_SCB* p_scb, A2dpCodecConfigExt* offl
 }
 
 void bta_av_vendor_offload_stop() {
+  if(true) {
+    bta_qti_av_vendor_offload_stop();
+    return;
+  }
   uint8_t param[255];
   uint8_t* p_param = param;
 
@@ -3174,8 +3191,101 @@ void bta_av_vendor_offload_stop() {
  * Returns          void
  *
  ******************************************************************************/
+void bta_av_qti_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
+  tBT_A2DP_OFFLOAD offload_start;
+  uint8_t param[sizeof(tBT_QTI_A2DP_OFFLOAD)];
+
+  log::info("stream {}, audio channels open {}", p_scb->started ? "STARTED" : "STOPPED", bta_av_cb.audio_open_cnt);
+
+  /* Check if stream has already been started. */
+  /* Support offload if only one audio source stream is open. */
+  if (p_scb->started != true) {
+    return;
+  }
+
+  bta_av_offload_codec_builder(p_scb, &offload_start);
+  switch(offload_start.codec_type) {
+    case BTA_AV_CODEC_TYPE_SBC:
+      offload_start.codec_type = 0;
+      break;
+
+    case BTA_AV_CODEC_TYPE_AAC:
+      offload_start.codec_type = 2;
+      break;
+
+    case BTA_AV_CODEC_TYPE_APTX:
+      offload_start.codec_type = 8;
+      if (offload_start.mtu > MAX_2MBPS_AVDTP_MTU) {
+        offload_start.mtu = MAX_2MBPS_AVDTP_MTU;
+      }
+      break;
+
+    case BTA_AV_CODEC_TYPE_APTXHD:
+      offload_start.codec_type = 9;
+      if (offload_start.mtu > MAX_2MBPS_AVDTP_MTU) {
+        offload_start.mtu = MAX_2MBPS_AVDTP_MTU;
+      }
+      break;
+
+    case BTA_AV_CODEC_TYPE_LDAC:
+      offload_start.codec_type = 4;
+      if (offload_start.mtu > MAX_2MBPS_AVDTP_MTU) {
+        offload_start.mtu = MAX_2MBPS_AVDTP_MTU;
+      }
+      break;
+
+    case BTA_AV_CODEC_TYPE_APTX_ADAPTIVE:
+      offload_start.codec_type = 10;
+      break;
+
+    default:
+      log::info("Unknown Codec {}", offload_start.codec_type);
+      return;
+      break;
+  }
+  //offload_start.mtu = offload_start.mtu + AVDT_MEDIA_HDR_SIZE;
+
+  uint8_t *p_param = param;
+
+  *p_param++ = HCI_VSQC_CONTROLLER_A2DP_OPCODE;
+
+  UINT8_TO_STREAM(p_param, offload_start.codec_type);
+  UINT8_TO_STREAM(p_param, 0); // transport type slimbus
+  UINT8_TO_STREAM(p_param, offload_start.codec_type);
+  UINT8_TO_STREAM(p_param, 0); // dev_index
+  UINT8_TO_STREAM(p_param, 0); // max latency
+  UINT8_TO_STREAM(p_param, 0); // delay reporting
+
+// Update this when AOSP stack supports SCMS
+  UINT8_TO_STREAM(p_param, offload_start.scms_t_enable[0]); // cp is active
+  UINT8_TO_STREAM(p_param, 2); // cp_flag
+  UINT16_TO_STREAM(p_param, offload_start.sample_rate);
+  UINT16_TO_STREAM(p_param, offload_start.acl_hdl);
+  UINT16_TO_STREAM(p_param, offload_start.l2c_rcid);
+  UINT16_TO_STREAM(p_param, offload_start.mtu);
+  UINT8_TO_STREAM(p_param, 1); // Stream Start
+  UINT8_TO_STREAM(p_param, 0); // tws is false
+  // Left for non TWS device
+  UINT8_TO_STREAM(p_param, 0);
+  UINT16_TO_STREAM(p_param, 150); // ttp
+
+  memcpy(p_param, p_scb->cfg.codec_info, AVDT_CODEC_SIZE);
+  p_param += AVDT_CODEC_SIZE;
+
+  bta_av_cb.offload_start_pending_hndl = p_scb->hndl;
+
+  BTM_VendorSpecificCommand(HCI_QTI_CONTROLLER_A2DP_OPCODE, (p_param - param)-1,
+                            param, offload_vendor_callback);
+
+}
+
 void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   tBTA_AV_STATUS status = BTA_AV_FAIL_RESOURCES;
+
+  if(true) {
+    bta_av_qti_offload_req(p_scb, p_data);
+    return;
+  }
 
   tBT_A2DP_OFFLOAD offload_start;
   log::verbose("stream {}, audio channels open {}", p_scb->started ? "STARTED" : "STOPPED",
@@ -3287,6 +3397,9 @@ static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb, tBT_A2DP_OFFLOAD* p
       break;
     case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD:
       codec_type = BTA_AV_CODEC_TYPE_APTXHD;
+      break;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_ADAPTIVE:
+      codec_type = BTA_AV_CODEC_TYPE_APTX_ADAPTIVE;
       break;
     case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC:
       codec_type = BTA_AV_CODEC_TYPE_LDAC;

@@ -60,6 +60,7 @@ enum tA2DP_CODEC_ID : uint64_t {
   A2DP_CODEC_ID_APTX_HD = 0x002400d7ff,
   A2DP_CODEC_ID_LDAC = 0x00aa012dff,
   A2DP_CODEC_ID_OPUS = 0x000100e0ff,
+  A2DP_CODEC_ID_APTX_AD = 0x00ad00d7ff,
 };
 
 // Error codes returned in AVDTP reject signalling messages.

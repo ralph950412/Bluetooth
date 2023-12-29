@@ -24,6 +24,7 @@
 
 #include "a2dp_vendor_aptx.h"
 #include "a2dp_vendor_aptx_hd.h"
+#include "a2dp_vendor_aptx_adaptive.h"
 #include "a2dp_vendor_ldac.h"
 #include "a2dp_vendor_opus.h"
 #include "internal_include/bt_trace.h"
@@ -778,6 +779,11 @@ std::string A2DP_VendorCodecInfoString(const uint8_t* p_codec_info) {
   // Check for aptX-HD
   if (vendor_id == A2DP_APTX_HD_VENDOR_ID && codec_id == A2DP_APTX_HD_CODEC_ID_BLUETOOTH) {
     return A2DP_VendorCodecInfoStringAptxHd(p_codec_info);
+  }
+
+  if (vendor_id == A2DP_APTX_ADAPTIVE_VENDOR_ID &&
+      codec_id == A2DP_APTX_ADAPTIVE_CODEC_ID_BLUETOOTH) {
+    return A2DP_VendorCodecInfoStringAptxAd(p_codec_info);
   }
 
   // Check for LDAC

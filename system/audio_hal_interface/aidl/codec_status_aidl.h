@@ -38,6 +38,7 @@ ChannelMode A2dpCodecToHalChannelMode(const btav_a2dp_codec_config_t& a2dp_codec
 bool A2dpSbcToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
 bool A2dpAacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
 bool A2dpAptxToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
+bool A2dpAptxAdaptiveToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
 bool A2dpLdacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
 bool A2dpOpusToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
 
