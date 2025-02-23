@@ -392,11 +392,11 @@ UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptxAdaptive(
 // |p_ie| is a pointer to the aptX-adaptive Codec Information Element information.
 // The result is stored in |p_result|. Returns A2DP_SUCCESS on success,
 // otherwise the corresponding A2DP error status code.
-static tA2DP_STATUS A2DP_BuildInfoAptxAdaptive(uint8_t media_type,
+static bool A2DP_BuildInfoAptxAdaptive(uint8_t media_type,
                                          const tA2DP_APTX_ADAPTIVE_CIE* p_ie,
                                          uint8_t* p_result) {
   if (p_ie == NULL || p_result == NULL) {
-    return A2DP_INVALID_PARAMS;
+    return false;
   }
 
   *p_result++ = A2DP_APTX_ADAPTIVE_CODEC_LEN;
@@ -433,7 +433,7 @@ static tA2DP_STATUS A2DP_ParseInfoAptxAdaptive(tA2DP_APTX_ADAPTIVE_CIE* p_ie,
   tA2DP_CODEC_TYPE codec_type;
 
   log::info("p_ie = {}, p_codec_info = {}", fmt::ptr(p_ie), fmt::ptr(p_codec_info));
-  if (p_ie == NULL || p_codec_info == NULL) return A2DP_INVALID_PARAMS;
+  if (p_ie == NULL || p_codec_info == NULL) return AVDTP_UNSUPPORTED_CONFIGURATION;
 
   // Check the codec capability length
   losc = *p_codec_info++;
@@ -441,17 +441,17 @@ static tA2DP_STATUS A2DP_ParseInfoAptxAdaptive(tA2DP_APTX_ADAPTIVE_CIE* p_ie,
 
   if (losc != A2DP_APTX_ADAPTIVE_CODEC_LEN) {
     log::info("A2DP_APTX_ADAPTIVE_CODEC_LEN fail");
-    return A2DP_WRONG_CODEC;
+    return AVDTP_UNSUPPORTED_CONFIGURATION;
   }
 
   media_type = (*p_codec_info++) >> 4;
-  codec_type = *p_codec_info++;
+  codec_type = static_cast<tA2DP_CODEC_TYPE>(*p_codec_info++);
   log::info("media_type: {}, codec_type: 0x{:x}", media_type, codec_type);
   /* Check the Media Type and Media Codec Type */
   if (media_type != AVDT_MEDIA_TYPE_AUDIO ||
       codec_type != A2DP_MEDIA_CT_NON_A2DP) {
     log::info("A2DP_MEDIA_CT_NON_A2DP ID");
-    return A2DP_WRONG_CODEC;
+    return AVDTP_UNSUPPORTED_CONFIGURATION;
   }
 
   // Check the Vendor ID and Codec ID */
@@ -467,7 +467,7 @@ static tA2DP_STATUS A2DP_ParseInfoAptxAdaptive(tA2DP_APTX_ADAPTIVE_CIE* p_ie,
   if (p_ie->vendorId != A2DP_APTX_ADAPTIVE_VENDOR_ID ||
       p_ie->codecId != A2DP_APTX_ADAPTIVE_CODEC_ID_BLUETOOTH) {
       log::info("A2DP_APTX_ADAPTIVE ID WRONG CODEC");
-    return A2DP_WRONG_CODEC;
+    return AVDTP_UNSUPPORTED_CONFIGURATION;
   }
 
   p_ie->sourceType = *p_codec_info & 0x07;
@@ -487,7 +487,7 @@ static tA2DP_STATUS A2DP_ParseInfoAptxAdaptive(tA2DP_APTX_ADAPTIVE_CIE* p_ie,
 //  if (A2DP_BitsSet(p_ie->sampleRate) != A2DP_SET_ONE_BIT)
 //    return A2DP_BAD_SAMP_FREQ;
   if (A2DP_BitsSet(p_ie->channelMode) != A2DP_SET_ONE_BIT) {
-    return A2DP_BAD_CH_MODE;
+    return A2DP_INVALID_CHANNEL_MODE;
   }
 
   log::info("btav_a2dp_codec_bits_per_sample_t: {}", sizeof(btav_a2dp_codec_bits_per_sample_t));
@@ -549,10 +549,10 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptxAdaptive(
   /* verify that each parameter is in range */
 
   /* sampling frequency */
-  if ((cfg_cie.sampleRate & p_cap->sampleRate) == 0) return A2DP_NS_SAMP_FREQ;
+  if ((cfg_cie.sampleRate & p_cap->sampleRate) == 0) return A2DP_NOT_SUPPORTED_SAMPLING_FREQUENCY;
 
   /* channel mode */
-  if ((cfg_cie.channelMode & p_cap->channelMode) == 0) return A2DP_NS_CH_MODE;
+  if ((cfg_cie.channelMode & p_cap->channelMode) == 0) return A2DP_NOT_SUPPORTED_CHANNEL_MODE;
 
   return A2DP_SUCCESS;
 }
@@ -780,7 +780,7 @@ tA2DP_STATUS A2DP_VendorIsCodecConfigMatchAptxAdaptive(const uint8_t* p_codec_in
 }
 
 btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexAptxAdaptive(
-    const uint8_t* p_codec_info) {
+    const uint8_t* /* p_codec_info */) {
   return BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_ADAPTIVE;
 }
 
@@ -1100,7 +1100,7 @@ static bool select_audio_channel_mode(
   return false;
 }
 
-bool A2dpCodecConfigAptxAdaptive::setCodecConfig(const uint8_t* p_peer_codec_info,
+tA2DP_STATUS A2dpCodecConfigAptxAdaptive::setCodecConfig(const uint8_t* p_peer_codec_info,
                                            bool is_capability,
                                            uint8_t* p_result_codec_config) {
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
