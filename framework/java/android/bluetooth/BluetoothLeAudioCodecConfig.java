@@ -20,6 +20,7 @@ import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.SuppressLint;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -44,12 +45,26 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
     /** @hide */
     @IntDef(
             prefix = "SOURCE_CODEC_TYPE_",
-            value = {SOURCE_CODEC_TYPE_LC3, SOURCE_CODEC_TYPE_INVALID})
+            value = {
+                SOURCE_CODEC_TYPE_LC3,
+                SOURCE_CODEC_TYPE_APTX_ADAPTIVE_LE,
+                SOURCE_CODEC_TYPE_APTX_ADAPTIVE_R4,
+                SOURCE_CODEC_TYPE_INVALID
+            })
     @Retention(RetentionPolicy.SOURCE)
     public @interface SourceCodecType {};
 
     public static final int SOURCE_CODEC_TYPE_LC3 = 0;
+
+    @SuppressLint("UnflaggedApi")
+    public static final int SOURCE_CODEC_TYPE_APTX_ADAPTIVE_LE = 1;
+
     public static final int SOURCE_CODEC_TYPE_INVALID = 1000 * 1000;
+    /**
+     * AptX Adaptive R4 Codec.
+     * @hide
+     */
+    public static final int SOURCE_CODEC_TYPE_APTX_ADAPTIVE_R4 = 2;
 
     /** @hide */
     @IntDef(
@@ -391,8 +406,12 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
         switch (mCodecType) {
             case SOURCE_CODEC_TYPE_LC3:
                 return "LC3";
+            case SOURCE_CODEC_TYPE_APTX_ADAPTIVE_LE:
+                return "APTX_ADAPTIVE_LEA";
             case SOURCE_CODEC_TYPE_INVALID:
                 return "INVALID CODEC";
+            case SOURCE_CODEC_TYPE_APTX_ADAPTIVE_R4:
+                return "APTX_ADAPTIVE_R4";
             default:
                 break;
         }

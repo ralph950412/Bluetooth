@@ -61,6 +61,8 @@ typedef enum {
   BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS,
 
   BTAV_A2DP_CODEC_INDEX_SOURCE_MAX,
+  BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_ADAPTIVE =
+                                 BTAV_A2DP_CODEC_INDEX_SOURCE_MAX,
 
   // Range of codec indexes reserved for Offload codec extensibility.
   // Indexes in this range will be allocated for offloaded codecs
@@ -176,6 +178,8 @@ struct btav_a2dp_codec_config_t {
         return "aptX";
       case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD:
         return "aptX HD";
+      case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_ADAPTIVE:
+        return "aptX Adaptive";
       case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC:
         return "LDAC";
       case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
