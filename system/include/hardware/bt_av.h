@@ -67,7 +67,7 @@ typedef enum {
   // Range of codec indexes reserved for Offload codec extensibility.
   // Indexes in this range will be allocated for offloaded codecs
   // that the stack does not recognize.
-  BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN = BTAV_A2DP_CODEC_INDEX_SOURCE_MAX,
+  BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN,
   BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX = BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN + 4,
 
   BTAV_A2DP_CODEC_INDEX_SINK_MIN = BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX,
